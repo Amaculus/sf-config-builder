@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sf-config-tool"
+name = "sf-config-builder"
 version = "0.1.0"
 description = "Manage Screaming Frog configs programmatically"
 readme = "README.md"
@@ -29,10 +29,10 @@ classifiers = [
 requires-python = ">=3.8"
 
 [project.urls]
-Homepage = "https://github.com/Amaculus/sf-config-tool"
-Documentation = "https://github.com/Amaculus/sf-config-tool#readme"
-Repository = "https://github.com/Amaculus/sf-config-tool"
-Issues = "https://github.com/Amaculus/sf-config-tool/issues"
+Homepage = "https://github.com/Amaculus/sf-config-builder"
+Documentation = "https://github.com/Amaculus/sf-config-builder#readme"
+Repository = "https://github.com/Amaculus/sf-config-builder"
+Issues = "https://github.com/Amaculus/sf-config-builder/issues"
 
 [project.optional-dependencies]
 dev = [
