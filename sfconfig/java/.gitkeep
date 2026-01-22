@@ -1,0 +1,8 @@
+# Place ConfigBuilder.jar here
+#
+# Build from sf-config-builder:
+#   javac -cp "C:/Program Files/Screaming Frog SEO Spider/*" -d bin src/ConfigBuilder.java
+#   cd bin && jar cfe ConfigBuilder.jar ConfigBuilder *.class
+#
+# Only this JAR should be here - NOT any JARs from SF's install directory.
+# SF's JARs are loaded at runtime from the user's local installation.

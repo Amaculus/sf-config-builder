@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sf-config-tool"
+version = "0.1.0"
+description = "Manage Screaming Frog configs programmatically"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Antonio"}
+]
+keywords = ["seo", "screaming-frog", "crawling", "automation", "config"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/Amaculus/sf-config-tool"
+Documentation = "https://github.com/Amaculus/sf-config-tool#readme"
+Repository = "https://github.com/Amaculus/sf-config-tool"
+Issues = "https://github.com/Amaculus/sf-config-tool/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sfconfig*"]
+
+[tool.setuptools.package-data]
+sfconfig = ["java/*.jar"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v"
+
+[tool.coverage.run]
+source = ["sfconfig"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
