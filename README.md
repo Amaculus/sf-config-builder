@@ -1,11 +1,11 @@
-# sf-config-tool
+# sf-config-builder
 
 Manage Screaming Frog `.seospiderconfig` files programmatically.
 
 ## Installation
 
 ```bash
-pip install sf-config-tool
+pip install sf-config-builder
 ```
 
 ### Requirements
@@ -18,8 +18,11 @@ pip install sf-config-tool
 ```python
 from sfconfig import SFConfig
 
-# Load existing config
+# Load existing config (auto-detects SF installation)
 config = SFConfig.load("base.seospiderconfig")
+
+# Or specify custom SF path
+config = SFConfig.load("base.seospiderconfig", sf_path="D:/Apps/Screaming Frog SEO Spider")
 
 # Configure for e-commerce audit
 config.max_urls = 100000
