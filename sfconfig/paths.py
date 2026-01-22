@@ -9,23 +9,20 @@ from typing import Optional
 from .exceptions import SFNotFoundError
 
 
-# Default installation paths by platform
+# Default installation paths by platform (list for multiple possible locations)
 SF_PATHS = {
-    "Darwin": "/Applications/Screaming Frog SEO Spider.app/Contents/Resources/Java",
-    "Windows": "C:/Program Files/Screaming Frog SEO Spider",
-    "Linux": "/usr/share/screamingfrogseospider",
+    "Darwin": ["/Applications/Screaming Frog SEO Spider.app/Contents/Resources/Java"],
+    "Windows": [
+        "C:/Program Files/Screaming Frog SEO Spider",
+        "C:/Program Files (x86)/Screaming Frog SEO Spider",
+    ],
+    "Linux": ["/usr/share/screamingfrogseospider"],
 }
 
-SF_CLI_PATHS = {
-    "Darwin": "/Applications/Screaming Frog SEO Spider.app/Contents/MacOS/ScreamingFrogSEOSpider",
-    "Windows": "C:/Program Files/Screaming Frog SEO Spider/ScreamingFrogSEOSpiderCli.exe",
+SF_CLI_NAMES = {
+    "Darwin": "ScreamingFrogSEOSpider",
+    "Windows": "ScreamingFrogSEOSpiderCli.exe",
     "Linux": "screamingfrogseospider",
-}
-
-SF_JRE_PATHS = {
-    "Darwin": "/Applications/Screaming Frog SEO Spider.app/Contents/PlugIns/jre.bundle/Contents/Home/bin/java",
-    "Windows": "C:/Program Files/Screaming Frog SEO Spider/jre/bin/java.exe",
-    "Linux": "/usr/share/screamingfrogseospider/jre/bin/java",
 }
 
 
@@ -34,8 +31,12 @@ def get_platform() -> str:
     return platform.system()
 
 
-def get_sf_jar_path() -> str:
+def get_sf_jar_path(sf_path: Optional[str] = None) -> str:
     """Get path to SF's JAR files directory.
+
+    Args:
+        sf_path: Optional custom path to SF installation.
+                 If not provided, checks SF_PATH env var then common locations.
 
     Returns:
         Path to the directory containing SF's JAR files.
@@ -43,28 +44,36 @@ def get_sf_jar_path() -> str:
     Raises:
         SFNotFoundError: If Screaming Frog installation is not found.
     """
-    # Try custom path from env var first
-    custom = os.environ.get("SF_PATH")
-    if custom and os.path.exists(custom):
-        return custom
+    # Try explicit argument first
+    if sf_path and os.path.exists(sf_path):
+        return sf_path
 
-    # Try default path for current platform
+    # Try custom path from env var
+    env_path = os.environ.get("SF_PATH")
+    if env_path and os.path.exists(env_path):
+        return env_path
+
+    # Try default paths for current platform
     plat = get_platform()
-    path = SF_PATHS.get(plat)
+    paths = SF_PATHS.get(plat, [])
 
-    if path and os.path.exists(path):
-        return path
+    for path in paths:
+        if os.path.exists(path):
+            return path
 
     raise SFNotFoundError(
         "Screaming Frog not found.\n"
-        f"Expected at: {path}\n"
+        f"Checked: {paths}\n"
         "Install from: https://www.screamingfrog.co.uk/seo-spider/\n"
-        "Or set SF_PATH environment variable."
+        "Or pass sf_path argument, or set SF_PATH environment variable."
     )
 
 
-def get_sf_cli_path() -> str:
+def get_sf_cli_path(sf_path: Optional[str] = None) -> str:
     """Get path to SF CLI executable.
+
+    Args:
+        sf_path: Optional custom path to SF installation directory.
 
     Returns:
         Path to the Screaming Frog CLI executable.
@@ -78,10 +87,27 @@ def get_sf_cli_path() -> str:
         return custom
 
     plat = get_platform()
-    path = SF_CLI_PATHS.get(plat)
+    cli_name = SF_CLI_NAMES.get(plat, "screamingfrogseospider")
 
-    if path and os.path.exists(path):
-        return path
+    # If sf_path provided, derive CLI path from it
+    if sf_path:
+        if plat == "Darwin":
+            # macOS: /Applications/Screaming Frog SEO Spider.app/Contents/MacOS/ScreamingFrogSEOSpider
+            cli_path = sf_path.replace("/Contents/Resources/Java", f"/Contents/MacOS/{cli_name}")
+        else:
+            cli_path = os.path.join(sf_path, cli_name)
+        if os.path.exists(cli_path):
+            return cli_path
+
+    # Try default paths
+    paths = SF_PATHS.get(plat, [])
+    for base_path in paths:
+        if plat == "Darwin":
+            cli_path = base_path.replace("/Contents/Resources/Java", f"/Contents/MacOS/{cli_name}")
+        else:
+            cli_path = os.path.join(base_path, cli_name)
+        if os.path.exists(cli_path):
+            return cli_path
 
     # On Linux, check if it's in PATH
     if plat == "Linux":
@@ -91,15 +117,17 @@ def get_sf_cli_path() -> str:
 
     raise SFNotFoundError(
         "Screaming Frog CLI not found.\n"
-        f"Expected at: {path}\n"
         "Or set SF_CLI_PATH environment variable."
     )
 
 
-def get_java_path() -> str:
+def get_java_path(sf_path: Optional[str] = None) -> str:
     """Get path to Java executable.
 
     Prefers SF's bundled JRE, falls back to system Java.
+
+    Args:
+        sf_path: Optional custom path to SF installation directory.
 
     Returns:
         Path to Java executable.
@@ -116,16 +144,36 @@ def get_java_path() -> str:
         if os.path.exists(java_path):
             return java_path
 
-    # Try SF's bundled JRE first
     plat = get_platform()
-    jre_path = SF_JRE_PATHS.get(plat)
+    java_name = "java.exe" if plat == "Windows" else "java"
 
-    if jre_path and os.path.exists(jre_path):
-        return jre_path
+    # If sf_path provided, try its bundled JRE
+    if sf_path:
+        if plat == "Darwin":
+            jre_path = sf_path.replace(
+                "/Contents/Resources/Java",
+                f"/Contents/PlugIns/jre.bundle/Contents/Home/bin/{java_name}"
+            )
+        else:
+            jre_path = os.path.join(sf_path, "jre", "bin", java_name)
+        if os.path.exists(jre_path):
+            return jre_path
+
+    # Try default SF paths for bundled JRE
+    paths = SF_PATHS.get(plat, [])
+    for base_path in paths:
+        if plat == "Darwin":
+            jre_path = base_path.replace(
+                "/Contents/Resources/Java",
+                f"/Contents/PlugIns/jre.bundle/Contents/Home/bin/{java_name}"
+            )
+        else:
+            jre_path = os.path.join(base_path, "jre", "bin", java_name)
+        if os.path.exists(jre_path):
+            return jre_path
 
     # Fall back to system Java
-    java_cmd = "java.exe" if plat == "Windows" else "java"
-    which_result = shutil.which(java_cmd)
+    which_result = shutil.which(java_name)
     if which_result:
         return which_result
 

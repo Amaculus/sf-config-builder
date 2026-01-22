@@ -26,15 +26,22 @@ class SFConfig:
 
     JAR_PATH = Path(__file__).parent / "java" / "ConfigBuilder.jar"
 
-    def __init__(self, data: Dict[str, Any], path: Optional[str] = None):
+    def __init__(
+        self,
+        data: Dict[str, Any],
+        path: Optional[str] = None,
+        sf_path: Optional[str] = None,
+    ):
         """Initialize SFConfig with inspection data.
 
         Args:
             data: Parsed JSON response from Java CLI --inspect command.
             path: Path to the source config file.
+            sf_path: Optional custom path to SF installation directory.
         """
         self._data = data
         self._path = path
+        self._sf_path = sf_path
         self._patches: Dict[str, Any] = {}
         self._extraction_ops: List[Dict[str, Any]] = []
         self._exclude_ops: List[Dict[str, Any]] = []
@@ -43,11 +50,13 @@ class SFConfig:
     # ==================== Loading ====================
 
     @classmethod
-    def load(cls, path: str) -> "SFConfig":
+    def load(cls, path: str, sf_path: Optional[str] = None) -> "SFConfig":
         """Load a config file.
 
         Args:
             path: Path to the .seospiderconfig file.
+            sf_path: Optional custom path to SF installation directory.
+                     Auto-detects if not provided.
 
         Returns:
             SFConfig instance with loaded configuration.
@@ -56,8 +65,8 @@ class SFConfig:
             SFParseError: If the config file cannot be parsed.
             SFNotFoundError: If Screaming Frog is not installed.
         """
-        result = cls._run_java("--inspect", "--config", str(path))
-        return cls(result, str(path))
+        result = cls._run_java("--inspect", "--config", str(path), sf_path=sf_path)
+        return cls(result, str(path), sf_path=sf_path)
 
     @classmethod
     def default(cls) -> "SFConfig":
@@ -466,6 +475,7 @@ class SFConfig:
             "--template", self._path,
             "--output", str(output),
             "--patches", patches_json,
+            sf_path=self._sf_path,
         )
 
         # Update state
@@ -476,7 +486,7 @@ class SFConfig:
         self._include_ops = []
 
         # Reload to get fresh data
-        result = self._run_java("--inspect", "--config", str(output))
+        result = self._run_java("--inspect", "--config", str(output), sf_path=self._sf_path)
         self._data = result
 
         return self
@@ -507,6 +517,7 @@ class SFConfig:
             "--output", null_path,
             "--patches", patches_json,
             "--dry-run",
+            sf_path=self._sf_path,
         )
 
         return result.get("changes", [])
@@ -641,7 +652,7 @@ class SFConfig:
         if render_js:
             args.append("--render-js")
 
-        result = self._run_java(*args)
+        result = self._run_java(*args, sf_path=self._sf_path)
         return result
 
     # ==================== Diff ====================
@@ -652,6 +663,7 @@ class SFConfig:
         config_a: Union[str, "SFConfig"],
         config_b: Union[str, "SFConfig"],
         prefix: Optional[str] = None,
+        sf_path: Optional[str] = None,
     ) -> SFDiff:
         """Compare two configs.
 
@@ -659,6 +671,7 @@ class SFConfig:
             config_a: First config (path or SFConfig instance).
             config_b: Second config (path or SFConfig instance).
             prefix: Optional path prefix to filter differences.
+            sf_path: Optional custom path to SF installation directory.
 
         Returns:
             SFDiff object representing the differences.
@@ -671,21 +684,26 @@ class SFConfig:
         path_a = config_a._path if isinstance(config_a, SFConfig) else str(config_a)
         path_b = config_b._path if isinstance(config_b, SFConfig) else str(config_b)
 
+        # Get sf_path from config if not provided
+        if sf_path is None and isinstance(config_a, SFConfig):
+            sf_path = config_a._sf_path
+
         args = ["--diff", "--config-a", path_a, "--config-b", path_b]
         if prefix:
             args.extend(["--prefix", prefix])
 
-        result = cls._run_java(*args)
+        result = cls._run_java(*args, sf_path=sf_path)
         return SFDiff(result)
 
     # ==================== Internal ====================
 
     @classmethod
-    def _run_java(cls, *args: str) -> Dict[str, Any]:
+    def _run_java(cls, *args: str, sf_path: Optional[str] = None) -> Dict[str, Any]:
         """Execute Java CLI and return parsed JSON result.
 
         Args:
             *args: Command line arguments to pass to the Java CLI.
+            sf_path: Optional custom path to SF installation directory.
 
         Returns:
             Parsed JSON response from the CLI.
@@ -695,12 +713,12 @@ class SFConfig:
             SFValidationError: If the CLI returns a validation error.
             SFConfigError: If the CLI returns any other error.
         """
-        java = get_java_path()
-        sf_path = get_sf_jar_path()
+        java = get_java_path(sf_path)
+        sf_jar_path = get_sf_jar_path(sf_path)
         cp_sep = get_classpath_separator()
 
         # Build classpath
-        classpath = f"{cls.JAR_PATH}{cp_sep}{sf_path}/*"
+        classpath = f"{cls.JAR_PATH}{cp_sep}{sf_jar_path}/*"
 
         cmd = [java, "-cp", classpath, "ConfigBuilder", *args]
 
