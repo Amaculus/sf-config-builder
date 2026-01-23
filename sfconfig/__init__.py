@@ -1,4 +1,4 @@
-"""sf-config-tool: Manage Screaming Frog configs programmatically.
+"""sf-config-builder: Manage Screaming Frog configs programmatically.
 
 This library provides a Python interface for managing Screaming Frog
 .seospiderconfig files, enabling inspection, diffing, modification,
@@ -22,7 +22,7 @@ from .exceptions import (
     SFValidationError,
 )
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __all__ = [
     "SFConfig",
     "SFDiff",

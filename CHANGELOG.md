@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-01-23
+
+### Added
+- Custom search rule management (add, remove, clear)
+- Custom JavaScript rule management (add, remove, clear)
+
+### Updated
+- Bundled ConfigBuilder.jar to support custom searches and custom JavaScript patches
+
 ## [0.1.0] - 2026-01-22
 
 ### Added
