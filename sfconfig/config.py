@@ -44,6 +44,8 @@ class SFConfig:
         self._sf_path = sf_path
         self._patches: Dict[str, Any] = {}
         self._extraction_ops: List[Dict[str, Any]] = []
+        self._custom_search_ops: List[Dict[str, Any]] = []
+        self._custom_js_ops: List[Dict[str, Any]] = []
         self._exclude_ops: List[Dict[str, Any]] = []
         self._include_ops: List[Dict[str, Any]] = []
 
@@ -300,6 +302,98 @@ class SFConfig:
         # Fall back to parsing mFilters if available
         return []
 
+    # ==================== Custom Searches ====================
+
+    def add_custom_search(
+        self,
+        name: str,
+        query: str,
+        mode: str = "CONTAINS",
+        data_type: str = "TEXT",
+        scope: str = "HTML",
+        case_sensitive: bool = False,
+        xpath: Optional[str] = None,
+    ) -> "SFConfig":
+        """Add a custom search rule.
+
+        Args:
+            name: Name for the search filter (appears in UI/exports).
+            query: Query string or regex.
+            mode: Search mode (e.g., CONTAINS, REGEX).
+            data_type: TEXT, HTML, or REGEX.
+            scope: HTML, TEXT, or similar scope depending on version.
+            case_sensitive: Whether the search is case sensitive.
+            xpath: Optional XPath (for XPath searches).
+
+        Returns:
+            Self for method chaining.
+        """
+        op: Dict[str, Any] = {
+            "op": "add",
+            "name": name,
+            "query": query,
+            "mode": mode.upper(),
+            "dataType": data_type.upper(),
+            "scope": scope.upper(),
+            "caseSensitive": case_sensitive,
+        }
+        if xpath:
+            op["xpath"] = xpath
+        self._custom_search_ops.append(op)
+        return self
+
+    def remove_custom_search(self, name: str) -> "SFConfig":
+        """Remove a custom search rule by name."""
+        self._custom_search_ops.append({"op": "remove", "name": name})
+        return self
+
+    def clear_custom_searches(self) -> "SFConfig":
+        """Remove all custom search rules."""
+        self._custom_search_ops.append({"op": "clear"})
+        return self
+
+    @property
+    def custom_searches(self) -> List[Dict[str, Any]]:
+        """List current custom search rules."""
+        return self.get("custom_searches", [])
+
+    # ==================== Custom JavaScript ====================
+
+    def add_custom_javascript(
+        self,
+        name: str,
+        javascript: str,
+        script_type: str = "EXTRACTION",
+        timeout_secs: int = 10,
+        content_types: str = "text/html",
+    ) -> "SFConfig":
+        """Add a custom JavaScript rule."""
+        op = {
+            "op": "add",
+            "name": name,
+            "javascript": javascript,
+            "type": script_type.upper(),
+            "timeout_secs": timeout_secs,
+            "content_types": content_types,
+        }
+        self._custom_js_ops.append(op)
+        return self
+
+    def remove_custom_javascript(self, name: str) -> "SFConfig":
+        """Remove a custom JavaScript rule by name."""
+        self._custom_js_ops.append({"op": "remove", "name": name})
+        return self
+
+    def clear_custom_javascript(self) -> "SFConfig":
+        """Remove all custom JavaScript rules."""
+        self._custom_js_ops.append({"op": "clear"})
+        return self
+
+    @property
+    def custom_javascript(self) -> List[Dict[str, Any]]:
+        """List current custom JavaScript rules."""
+        return self.get("custom_javascript", [])
+
     # ==================== Excludes ====================
 
     def add_exclude(self, pattern: str) -> "SFConfig":
@@ -438,6 +532,12 @@ class SFConfig:
         if self._extraction_ops:
             patches["extractions"] = self._extraction_ops
 
+        if self._custom_search_ops:
+            patches["custom_searches"] = self._custom_search_ops
+
+        if self._custom_js_ops:
+            patches["custom_javascript"] = self._custom_js_ops
+
         if self._exclude_ops:
             # Convert ops to the format expected by Java CLI
             if len(self._exclude_ops) == 1 and self._exclude_ops[0].get("op") == "clear":
@@ -482,6 +582,8 @@ class SFConfig:
         self._path = str(output)
         self._patches = {}
         self._extraction_ops = []
+        self._custom_search_ops = []
+        self._custom_js_ops = []
         self._exclude_ops = []
         self._include_ops = []
 
@@ -500,6 +602,10 @@ class SFConfig:
         patches = dict(self._patches)
         if self._extraction_ops:
             patches["extractions"] = self._extraction_ops
+        if self._custom_search_ops:
+            patches["custom_searches"] = self._custom_search_ops
+        if self._custom_js_ops:
+            patches["custom_javascript"] = self._custom_js_ops
         if self._exclude_ops:
             patches["mExcludeManager.mExcludePatterns"] = self._exclude_ops
         if self._include_ops:

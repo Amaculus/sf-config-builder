@@ -97,6 +97,45 @@ config.remove_extraction("Price")
 config.clear_extractions()
 ```
 
+### Custom Searches
+
+```python
+# Add custom search filters
+config.add_custom_search(
+    name="Filter 1",
+    query=".*",
+    mode="CONTAINS",
+    data_type="REGEX",
+    scope="HTML",
+    case_sensitive=False
+)
+
+# Remove by name
+config.remove_custom_search("Filter 1")
+
+# Clear all
+config.clear_custom_searches()
+```
+
+### Custom JavaScript
+
+```python
+# Add custom JavaScript extraction
+config.add_custom_javascript(
+    name="Extractor 1",
+    javascript="return document.title;",
+    script_type="EXTRACTION",
+    timeout_secs=10,
+    content_types="text/html"
+)
+
+# Remove by name
+config.remove_custom_javascript("Extractor 1")
+
+# Clear all
+config.clear_custom_javascript()
+```
+
 ### Exclude/Include Patterns
 
 ```python

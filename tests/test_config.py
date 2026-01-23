@@ -182,6 +182,84 @@ class TestSFConfigExtractions:
         assert config._extraction_ops[0] == {"op": "clear"}
 
 
+class TestSFConfigCustomSearches:
+    """Tests for SFConfig custom search methods."""
+
+    def test_add_custom_search_basic(self):
+        """add_custom_search should add operation with defaults."""
+        config = SFConfig({"fields": []})
+        config.add_custom_search("Filter 1", ".*", data_type="REGEX")
+
+        assert len(config._custom_search_ops) == 1
+        op = config._custom_search_ops[0]
+        assert op["op"] == "add"
+        assert op["name"] == "Filter 1"
+        assert op["query"] == ".*"
+        assert op["mode"] == "CONTAINS"
+        assert op["dataType"] == "REGEX"
+        assert op["scope"] == "HTML"
+
+    def test_add_custom_search_with_xpath(self):
+        """add_custom_search should include xpath when provided."""
+        config = SFConfig({"fields": []})
+        config.add_custom_search(
+            "Filter 2",
+            "//title",
+            mode="XPATH",
+            data_type="TEXT",
+            scope="HTML",
+            xpath="//title",
+        )
+
+        op = config._custom_search_ops[0]
+        assert op["xpath"] == "//title"
+
+    def test_remove_custom_search(self):
+        """remove_custom_search should add remove operation."""
+        config = SFConfig({"fields": []})
+        config.remove_custom_search("Filter 1")
+
+        assert config._custom_search_ops == [{"op": "remove", "name": "Filter 1"}]
+
+    def test_clear_custom_searches(self):
+        """clear_custom_searches should add clear operation."""
+        config = SFConfig({"fields": []})
+        config.clear_custom_searches()
+
+        assert config._custom_search_ops == [{"op": "clear"}]
+
+
+class TestSFConfigCustomJavaScript:
+    """Tests for SFConfig custom JavaScript methods."""
+
+    def test_add_custom_javascript_basic(self):
+        """add_custom_javascript should add operation with defaults."""
+        config = SFConfig({"fields": []})
+        config.add_custom_javascript("Extractor 1", "return document.title;")
+
+        assert len(config._custom_js_ops) == 1
+        op = config._custom_js_ops[0]
+        assert op["op"] == "add"
+        assert op["name"] == "Extractor 1"
+        assert op["javascript"] == "return document.title;"
+        assert op["type"] == "EXTRACTION"
+        assert op["timeout_secs"] == 10
+        assert op["content_types"] == "text/html"
+
+    def test_remove_custom_javascript(self):
+        """remove_custom_javascript should add remove operation."""
+        config = SFConfig({"fields": []})
+        config.remove_custom_javascript("Extractor 1")
+
+        assert config._custom_js_ops == [{"op": "remove", "name": "Extractor 1"}]
+
+    def test_clear_custom_javascript(self):
+        """clear_custom_javascript should add clear operation."""
+        config = SFConfig({"fields": []})
+        config.clear_custom_javascript()
+
+        assert config._custom_js_ops == [{"op": "clear"}]
+
 class TestSFConfigExcludes:
     """Tests for SFConfig exclude methods."""
 
