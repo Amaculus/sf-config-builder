@@ -28,6 +28,10 @@ config = SFConfig.load("base.seospiderconfig", sf_path="D:/Apps/Screaming Frog S
 config.max_urls = 100000
 config.rendering_mode = "JAVASCRIPT"
 
+# Enable CSS/JS crawling (recommended for JS rendering)
+config.set("mCrawlConfig.mCrawlCSS", True)
+config.set("mCrawlConfig.mCrawlJavaScript", True)
+
 # Add custom extractions
 config.add_extraction("Price", "//span[@class='price']")
 config.add_extraction("SKU", "//span[@itemprop='sku']")
@@ -73,7 +77,22 @@ config.rendering_mode = "JAVASCRIPT"  # STATIC | JAVASCRIPT
 config.robots_mode = "IGNORE"         # RESPECT | IGNORE
 config.crawl_delay = 0.5
 config.user_agent = "MyBot/1.0"
+
+# CSS/JS crawling & storage
+config.set("mCrawlConfig.mCrawlCSS", True)
+config.set("mCrawlConfig.mStoreCSS", True)
+config.set("mCrawlConfig.mCrawlJavaScript", True)
+config.set("mCrawlConfig.mStoreJavaScript", True)
+
+# Performance / rate limiting
+config.set("mPerformanceConfig.mLimitPerformance", True)
+config.set("mPerformanceConfig.mUrlRequestsPerSecond", 5.0)
 ```
+
+> **Note**: When switching to `JAVASCRIPT` rendering mode, Screaming Frog's GUI
+> automatically enables CSS/JS crawling. When building configs programmatically,
+> you should explicitly set `mCrawlCSS` and `mCrawlJavaScript` to `True` to
+> ensure proper rendering.
 
 ### Custom Extractions
 
@@ -295,21 +314,19 @@ This means:
 
 ### Building the Java CLI
 
-The Java CLI lives in a separate repo (`sf-config-builder`). To build:
+The Java source (`ConfigBuilder.java`) is included alongside the JAR in `sfconfig/java/`. To rebuild after modifications:
 
 ```bash
-cd /path/to/sf-config-builder
+cd sfconfig/java
 
 # Compile against SF's JARs (as compile-time dependency)
-javac -cp "C:/Program Files/Screaming Frog SEO Spider/*" \
-      -d bin src/ConfigBuilder.java
+javac -cp "/path/to/Screaming Frog SEO Spider/lib/*" ConfigBuilder.java
 
-# Package into JAR
-cd bin
-jar cfe ConfigBuilder.jar ConfigBuilder *.class
+# Package into JAR (include source for transparency)
+jar cfe ConfigBuilder.jar ConfigBuilder *.class ConfigBuilder.java
 
-# Copy to Python package
-cp ConfigBuilder.jar /path/to/sf-config-tool/sfconfig/java/
+# Clean up loose class files
+rm -f *.class
 ```
 
 **Important**: Only bundle `ConfigBuilder.jar`. Do NOT bundle any JARs from SF's install directory - those are proprietary and already on the user's machine.
