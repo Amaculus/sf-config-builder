@@ -188,6 +188,46 @@ class SFConfig:
         self.set("mCrawlConfig.mRenderingMode", value)
 
     @property
+    def crawl_css(self) -> bool:
+        """Get whether CSS assets are crawled."""
+        return bool(self.get("mCrawlConfig.mCrawlCSS", False))
+
+    @crawl_css.setter
+    def crawl_css(self, value: bool):
+        """Set whether CSS assets are crawled."""
+        self.set("mCrawlConfig.mCrawlCSS", bool(value))
+
+    @property
+    def store_css(self) -> bool:
+        """Get whether CSS assets are stored."""
+        return bool(self.get("mCrawlConfig.mStoreCSS", False))
+
+    @store_css.setter
+    def store_css(self, value: bool):
+        """Set whether CSS assets are stored."""
+        self.set("mCrawlConfig.mStoreCSS", bool(value))
+
+    @property
+    def crawl_javascript(self) -> bool:
+        """Get whether JavaScript assets are crawled."""
+        return bool(self.get("mCrawlConfig.mCrawlJavaScript", False))
+
+    @crawl_javascript.setter
+    def crawl_javascript(self, value: bool):
+        """Set whether JavaScript assets are crawled."""
+        self.set("mCrawlConfig.mCrawlJavaScript", bool(value))
+
+    @property
+    def store_javascript(self) -> bool:
+        """Get whether JavaScript assets are stored."""
+        return bool(self.get("mCrawlConfig.mStoreJavaScript", False))
+
+    @store_javascript.setter
+    def store_javascript(self, value: bool):
+        """Set whether JavaScript assets are stored."""
+        self.set("mCrawlConfig.mStoreJavaScript", bool(value))
+
+    @property
     def robots_mode(self) -> str:
         """Get the robots.txt handling mode (RESPECT or IGNORE)."""
         return self.get("mCrawlConfig.mRobotsTxtMode", "RESPECT")
@@ -226,6 +266,26 @@ class SFConfig:
     def user_agent(self, value: str):
         """Set the user agent string."""
         self.set("mUserAgentConfig.mUserAgent", value)
+
+    @property
+    def limit_performance(self) -> bool:
+        """Get whether crawl performance throttling is enabled."""
+        return bool(self.get("mPerformanceConfig.mLimitPerformance", False))
+
+    @limit_performance.setter
+    def limit_performance(self, value: bool):
+        """Set whether crawl performance throttling is enabled."""
+        self.set("mPerformanceConfig.mLimitPerformance", bool(value))
+
+    @property
+    def url_requests_per_second(self) -> float:
+        """Get the URL requests-per-second target."""
+        return float(self.get("mPerformanceConfig.mUrlRequestsPerSecond", 0.0))
+
+    @url_requests_per_second.setter
+    def url_requests_per_second(self, value: Union[int, float]):
+        """Set the URL requests-per-second target."""
+        self.set("mPerformanceConfig.mUrlRequestsPerSecond", float(value))
 
     # ==================== Extractions ====================
 

@@ -126,6 +126,58 @@ class TestSFConfigProperties:
 
         assert config._patches["mCrawlConfig.mRenderingMode"] == "JAVASCRIPT"
 
+    @pytest.mark.parametrize(
+        "prop_name,path",
+        [
+            ("crawl_css", "mCrawlConfig.mCrawlCSS"),
+            ("store_css", "mCrawlConfig.mStoreCSS"),
+            ("crawl_javascript", "mCrawlConfig.mCrawlJavaScript"),
+            ("store_javascript", "mCrawlConfig.mStoreJavaScript"),
+            ("limit_performance", "mPerformanceConfig.mLimitPerformance"),
+        ],
+    )
+    def test_boolean_property_getter(self, prop_name, path):
+        """Boolean properties should read from their mapped path."""
+        data = {"fields": [{"path": path, "value": True}]}
+        config = SFConfig(data)
+
+        assert getattr(config, prop_name) is True
+
+    @pytest.mark.parametrize(
+        "prop_name,path",
+        [
+            ("crawl_css", "mCrawlConfig.mCrawlCSS"),
+            ("store_css", "mCrawlConfig.mStoreCSS"),
+            ("crawl_javascript", "mCrawlConfig.mCrawlJavaScript"),
+            ("store_javascript", "mCrawlConfig.mStoreJavaScript"),
+            ("limit_performance", "mPerformanceConfig.mLimitPerformance"),
+        ],
+    )
+    def test_boolean_property_setter(self, prop_name, path):
+        """Boolean properties should write to their mapped path."""
+        config = SFConfig({"fields": []})
+        setattr(config, prop_name, True)
+
+        assert config._patches[path] is True
+
+    def test_url_requests_per_second_getter(self):
+        """url_requests_per_second should read from performance config."""
+        data = {
+            "fields": [
+                {"path": "mPerformanceConfig.mUrlRequestsPerSecond", "value": 3.5}
+            ]
+        }
+        config = SFConfig(data)
+
+        assert config.url_requests_per_second == 3.5
+
+    def test_url_requests_per_second_setter(self):
+        """url_requests_per_second should write a float value."""
+        config = SFConfig({"fields": []})
+        config.url_requests_per_second = 5
+
+        assert config._patches["mPerformanceConfig.mUrlRequestsPerSecond"] == 5.0
+
 
 class TestSFConfigExtractions:
     """Tests for SFConfig extraction methods."""
