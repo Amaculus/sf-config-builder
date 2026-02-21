@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-02-21
+
+### Added
+- Java allowlist support for CSS/JS crawl/store fields:
+  - `mCrawlConfig.mCrawlCSS`
+  - `mCrawlConfig.mStoreCSS`
+  - `mCrawlConfig.mCrawlJavaScript`
+  - `mCrawlConfig.mStoreJavaScript`
+- Java allowlist support for performance throttling fields:
+  - `mPerformanceConfig.mLimitPerformance`
+  - `mPerformanceConfig.mUrlRequestsPerSecond`
+- Python convenience properties:
+  - `crawl_css`, `store_css`
+  - `crawl_javascript`, `store_javascript`
+  - `limit_performance`, `url_requests_per_second`
+
+### Tests
+- Added unit tests for all new Python convenience properties.
+
 ## [0.1.5] - 2026-01-23
 
 ### Fixed
