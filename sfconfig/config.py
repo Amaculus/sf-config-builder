@@ -567,6 +567,59 @@ class SFConfig:
                  self.get("mCrawlConfig.mAllowedDomains", []) + [domain])
         return self
 
+    # ==================== HTTP headers & user agent ====================
+
+    def add_http_header(self, name: str, value: str) -> "SFConfig":
+        """Append a custom HTTP header without touching the existing ones
+        (the base config ships Accept / Accept-Encoding / Cache-Control /
+        Pragma — clobbering them breaks the crawl).
+
+        Args:
+            name: Header name, e.g. "X-SEO-Audit".
+            value: Header value.
+
+        Returns:
+            Self for method chaining.
+        """
+        pending = self._patches.get("mCustomHttpHeadersConfig.mHttpHeaders")
+        if not isinstance(pending, dict) or pending.get("op") != "append":
+            pending = {"op": "append", "values": []}
+        pending["values"].append({"name": str(name), "value": str(value)})
+        self._patches["mCustomHttpHeadersConfig.mHttpHeaders"] = pending
+        return self
+
+    def remove_http_header(self, name: str) -> "SFConfig":
+        """Remove custom HTTP header(s) by name (case-insensitive)."""
+        self._patches["mCustomHttpHeadersConfig.mHttpHeaders"] = {
+            "op": "remove",
+            "values": [{"name": str(name), "value": ""}],
+        }
+        return self
+
+    def set_user_agent(self, user_agent: str, robots_user_agent: Optional[str] = None) -> "SFConfig":
+        """Set a custom User-Agent that actually persists.
+
+        Setting mUserAgent alone silently reverts to the SF default on
+        reload: with mIsSeoSpider=True, SF restores the product UA when the
+        config is deserialized. This helper sets both fields.
+
+        Args:
+            user_agent: Full UA string, e.g.
+                "AuditLabs-SEO-Crawler/1.0 (+https://auditlabs.co)".
+            robots_user_agent: Optional robots.txt matching token. Defaults
+                to the first product token of user_agent (text before "/").
+
+        Returns:
+            Self for method chaining.
+        """
+        self.set("mUserAgentConfig.mUserAgent", str(user_agent))
+        self.set("mUserAgentConfig.mIsSeoSpider", False)
+        if robots_user_agent is None:
+            robots_user_agent = str(user_agent).split("/")[0].strip()
+        if robots_user_agent:
+            self.set("mUserAgentConfig.mRobotsUserAgent", str(robots_user_agent))
+        return self
+
     # ==================== Saving ====================
 
     def save(self, output_path: Optional[str] = None) -> "SFConfig":

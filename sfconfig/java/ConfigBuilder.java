@@ -14,6 +14,8 @@ import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -82,8 +84,13 @@ public class ConfigBuilder {
             "mCrawlConfig.mExtractHttpHeader",
             "mCrawlConfig.mExtractCookies",
             "mCrawlConfig.mInspectAccessibility",
+            "mCrawlConfig.mAjaxTimeoutMillis",
+            "mCrawlConfig.mCrawlHreflang",
+            // mIsSeoSpider must be settable to false or SF restores the default
+            // UA on config deserialization and a custom mUserAgent never persists
             "mUserAgentConfig.mUserAgent",
-            "mUserAgentConfig.mPreset",
+            "mUserAgentConfig.mIsSeoSpider",
+            "mUserAgentConfig.mRobotsUserAgent",
             "mContentConfig.mMinContentLength",
             "mLanguageToolConfig.mSpellCheckEnabled",
             "mLanguageToolConfig.mGrammarCheckEnabled",
@@ -114,6 +121,10 @@ public class ConfigBuilder {
             "api_key",
             "auth"
     ));
+
+    private static final String HTTP_HEADERS_PATH = "mCustomHttpHeadersConfig.mHttpHeaders";
+    private static final Pattern HEADER_NAME_RE = Pattern.compile("mName=([^\\r\\n]*)");
+    private static final Pattern HEADER_VALUE_RE = Pattern.compile("mValue=([^\\r\\n]*)");
 
     private static final String VIRTUAL_EXCLUDE_PATTERNS = "mExcludeManager.mExcludePatterns";
     private static final String VIRTUAL_EXCLUDE_URLS = "mExcludeManager.mExcludeUrls";
@@ -331,6 +342,11 @@ public class ConfigBuilder {
                     }
                     continue;
                 }
+            }
+
+            if (HTTP_HEADERS_PATH.equals(path)) {
+                applyHttpHeadersPatch(root, entry.getValue(), changes, warnings);
+                continue;
             }
 
             if (isVirtualExcludeField(path)) {
@@ -1417,7 +1433,10 @@ public class ConfigBuilder {
                 field.set(crawlConfig, enumValue);
                 return;
             } catch (Exception ex) {
-                throw new CliException(ERROR_VALIDATION, 1, "Invalid rendering mode: " + mode, null);
+                throw new CliException(ERROR_VALIDATION, 1,
+                        "Invalid rendering mode: " + mode
+                                + " (valid: " + String.join(", ", enumOptions(field.getType())) + ")",
+                        null);
             }
         }
 
@@ -1430,7 +1449,10 @@ public class ConfigBuilder {
                 field.set(crawlConfig, enumValue);
                 return;
             } catch (Exception ex) {
-                throw new CliException(ERROR_VALIDATION, 1, "Invalid rendering mode: " + mode, null);
+                throw new CliException(ERROR_VALIDATION, 1,
+                        "Invalid rendering mode: " + mode
+                                + " (valid: " + String.join(", ", enumOptions(field.getType())) + ")",
+                        null);
             }
         }
 
@@ -1462,7 +1484,188 @@ public class ConfigBuilder {
         if ("STANDARD".equals(normalized) || "RENDER".equals(normalized) || "AJAX".equals(normalized)) {
             return normalized;
         }
-        throw new CliException(ERROR_VALIDATION, 1, "Invalid rendering mode: " + mode, null);
+        throw new CliException(ERROR_VALIDATION, 1,
+                "Invalid rendering mode: " + mode + " (valid: HTML, JAVASCRIPT)", null);
+    }
+
+    /**
+     * Applies a patch to mCustomHttpHeadersConfig.mHttpHeaders. The list holds
+     * HttpHeader objects (not strings), so entries are parsed into name/value
+     * pairs and rebuilt as instances of the list's element class. Accepted
+     * entry forms: {"name": ..., "value": ...}, "Name: Value", or the raw
+     * toString form "HttpHeader [\r\n mName=...\r\n mValue=...\r\n]".
+     * Patch forms mirror applyListPatch: a plain array (replace), or
+     * {"op": "set"|"append"|"prepend"|"clear"|"remove", "values": [...]}
+     * ("remove" matches by header name, case-insensitive).
+     */
+    private static void applyHttpHeadersPatch(
+            Object root, JsonElement patch, List<Map<String, Object>> changes, List<String> warnings)
+            throws Exception {
+        Object target = resolvePath(root, HTTP_HEADERS_PATH);
+        Field field = findField(target.getClass(), leafName(HTTP_HEADERS_PATH));
+        field.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Object> current = (List<Object>) field.get(target);
+        List<Object> base = current == null ? new ArrayList<>() : new ArrayList<>(current);
+        List<String> beforeRepr = toStringList(base);
+        Class<?> headerClass = headerElementClass(field, base);
+
+        if (patch == null || patch.isJsonNull()) {
+            throw new CliException(ERROR_VALIDATION, 1, "List patch cannot be null", null);
+        }
+
+        List<Object> after;
+        if (patch.isJsonArray()) {
+            after = buildHeaderList(headerClass, patch.getAsJsonArray());
+        } else if (patch.isJsonObject()) {
+            JsonObject opObj = patch.getAsJsonObject();
+            String op = getJsonString(opObj, "op");
+            if (op == null) {
+                throw new CliException(ERROR_VALIDATION, 1, "List patch missing op", null);
+            }
+            String opLower = op.toLowerCase(Locale.ROOT);
+            if ("clear".equals(opLower)) {
+                after = new ArrayList<>();
+            } else {
+                JsonElement valuesEl = opObj.get("values");
+                if (valuesEl == null || !valuesEl.isJsonArray()) {
+                    throw new CliException(ERROR_VALIDATION, 1, "List patch requires values array", null);
+                }
+                if ("set".equals(opLower)) {
+                    after = buildHeaderList(headerClass, valuesEl.getAsJsonArray());
+                } else if ("append".equals(opLower)) {
+                    after = new ArrayList<>(base);
+                    for (Object header : buildHeaderList(headerClass, valuesEl.getAsJsonArray())) {
+                        String name = headerName(header);
+                        for (Object existing : base) {
+                            if (name != null && name.equalsIgnoreCase(headerName(existing))) {
+                                warnings.add("Header '" + name + "' already present; appending anyway");
+                                break;
+                            }
+                        }
+                        after.add(header);
+                    }
+                } else if ("prepend".equals(opLower)) {
+                    after = buildHeaderList(headerClass, valuesEl.getAsJsonArray());
+                    after.addAll(base);
+                } else if ("remove".equals(opLower)) {
+                    Set<String> names = new HashSet<>();
+                    for (JsonElement el : valuesEl.getAsJsonArray()) {
+                        String[] pair = parseHeaderSpec(el);
+                        if (pair[0] != null) {
+                            names.add(pair[0].toLowerCase(Locale.ROOT));
+                        }
+                    }
+                    after = new ArrayList<>();
+                    for (Object existing : base) {
+                        String name = headerName(existing);
+                        if (name == null || !names.contains(name.toLowerCase(Locale.ROOT))) {
+                            after.add(existing);
+                        }
+                    }
+                } else {
+                    throw new CliException(ERROR_VALIDATION, 1, "Unknown list op: " + op, null);
+                }
+            }
+        } else {
+            throw new CliException(ERROR_VALIDATION, 1, "Invalid list patch format", null);
+        }
+
+        field.set(target, after);
+        List<String> afterRepr = toStringList(after);
+        if (!Objects.equals(beforeRepr, afterRepr)) {
+            Map<String, Object> change = new LinkedHashMap<>();
+            change.put("path", HTTP_HEADERS_PATH);
+            change.put("before", beforeRepr);
+            change.put("after", afterRepr);
+            changes.add(change);
+        }
+    }
+
+    private static Class<?> headerElementClass(Field field, List<Object> current) throws CliException {
+        Type generic = field.getGenericType();
+        if (generic instanceof ParameterizedType) {
+            Type[] args = ((ParameterizedType) generic).getActualTypeArguments();
+            if (args.length == 1 && args[0] instanceof Class) {
+                return (Class<?>) args[0];
+            }
+        }
+        if (current != null && !current.isEmpty()) {
+            return current.get(0).getClass();
+        }
+        throw new CliException(ERROR_VALIDATION, 1,
+                "Cannot determine HttpHeader element class (empty list, no generic type)", null);
+    }
+
+    private static List<Object> buildHeaderList(Class<?> headerClass, JsonArray array) throws Exception {
+        List<Object> out = new ArrayList<>();
+        for (JsonElement el : array) {
+            String[] pair = parseHeaderSpec(el);
+            if (pair[0] == null || pair[0].isEmpty()) {
+                throw new CliException(ERROR_VALIDATION, 1, "Header entry missing name: " + el, null);
+            }
+            out.add(newHeaderInstance(headerClass, pair[0], pair[1] == null ? "" : pair[1]));
+        }
+        return out;
+    }
+
+    private static String[] parseHeaderSpec(JsonElement el) throws CliException {
+        if (el.isJsonObject()) {
+            JsonObject obj = el.getAsJsonObject();
+            return new String[] {getJsonString(obj, "name"), getJsonString(obj, "value")};
+        }
+        if (el.isJsonPrimitive()) {
+            String raw = el.getAsString();
+            if (raw.startsWith("HttpHeader [")) {
+                Matcher nameM = HEADER_NAME_RE.matcher(raw);
+                Matcher valueM = HEADER_VALUE_RE.matcher(raw);
+                return new String[] {
+                        nameM.find() ? nameM.group(1).trim() : null,
+                        valueM.find() ? valueM.group(1).trim() : null,
+                };
+            }
+            int colon = raw.indexOf(':');
+            if (colon > 0) {
+                return new String[] {raw.substring(0, colon).trim(), raw.substring(colon + 1).trim()};
+            }
+            return new String[] {raw.trim(), null};
+        }
+        throw new CliException(ERROR_VALIDATION, 1, "Invalid header entry: " + el, null);
+    }
+
+    private static Object newHeaderInstance(Class<?> headerClass, String name, String value) throws Exception {
+        try {
+            Constructor<?> ctor = headerClass.getDeclaredConstructor(String.class, String.class);
+            ctor.setAccessible(true);
+            return ctor.newInstance(name, value);
+        } catch (NoSuchMethodException ignored) {
+            // fall through to no-arg + field injection
+        }
+        Constructor<?> ctor = headerClass.getDeclaredConstructor();
+        ctor.setAccessible(true);
+        Object header = ctor.newInstance();
+        Field nameField = findField(headerClass, "mName");
+        nameField.setAccessible(true);
+        nameField.set(header, name);
+        Field valueField = findField(headerClass, "mValue");
+        valueField.setAccessible(true);
+        valueField.set(header, value);
+        return header;
+    }
+
+    private static String headerName(Object header) {
+        if (header == null) {
+            return null;
+        }
+        try {
+            Field nameField = findField(header.getClass(), "mName");
+            nameField.setAccessible(true);
+            Object value = nameField.get(header);
+            return value == null ? null : value.toString();
+        } catch (Exception ex) {
+            Matcher m = HEADER_NAME_RE.matcher(header.toString());
+            return m.find() ? m.group(1).trim() : null;
+        }
     }
 
     private static List<String> applyListPatch(List<String> before, JsonElement patch, List<String> warnings) throws CliException {
@@ -1658,7 +1861,12 @@ public class ConfigBuilder {
             try {
                 return Enum.valueOf((Class<Enum>) type, normalized);
             } catch (Exception ex) {
-                throw new CliException(ERROR_VALIDATION, 1, "Invalid enum value for " + path + ": " + raw, null);
+                Map<String, Object> details = new LinkedHashMap<>();
+                details.put("enumOptions", enumOptions(type));
+                throw new CliException(ERROR_VALIDATION, 1,
+                        "Invalid enum value for " + path + ": " + raw
+                                + " (valid: " + String.join(", ", enumOptions(type)) + ")",
+                        details);
             }
         }
 
@@ -1671,6 +1879,7 @@ public class ConfigBuilder {
         }
         return ALLOWLIST.contains(path)
                 || LIST_ALLOWLIST.contains(path)
+                || HTTP_HEADERS_PATH.equals(path)
                 || VIRTUAL_EXTRACTIONS.equals(path)
                 || VIRTUAL_CUSTOM_SEARCHES.equals(path)
                 || VIRTUAL_CUSTOM_JAVASCRIPT.equals(path)
@@ -1681,6 +1890,7 @@ public class ConfigBuilder {
         List<String> fields = new ArrayList<>();
         fields.addAll(ALLOWLIST);
         fields.addAll(LIST_ALLOWLIST);
+        fields.add(HTTP_HEADERS_PATH);
         fields.add("extractions");
         fields.add(VIRTUAL_EXTRACTIONS);
         fields.add("custom_searches");

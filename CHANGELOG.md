@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Custom HTTP headers: `mCustomHttpHeadersConfig.mHttpHeaders` is now editable, with
+  `add_http_header(name, value)` / `remove_http_header(name)` Python helpers. Entries
+  accept `{"name","value"}` objects, `"Name: Value"` strings, or the raw
+  `HttpHeader [...]` form; list ops `set/append/prepend/clear/remove` supported.
+  Header objects are rebuilt reflectively from the list field's generic element type.
+- Custom User-Agent that actually persists: `set_user_agent(ua, robots_ua=None)`.
+  Root cause: with `mUserAgentConfig.mIsSeoSpider=True`, SF restores the product UA on
+  config deserialization, so a bare `mUserAgent` write silently reverted. `mIsSeoSpider`
+  and `mRobotsUserAgent` are now on the allowlist and the helper sets all three.
+- Allowlisted `mCrawlConfig.mAjaxTimeoutMillis` (JS render wait) and
+  `mCrawlConfig.mCrawlHreflang` — both exist in SF 22.2 and round-trip correctly.
+
+### Fixed
+- Removed `mUserAgentConfig.mPreset` from the allowlist — the field does not exist in
+  SF 22.2 (`save()` raised "Field not found" when set).
+- Enum validation errors now include the valid options, e.g.
+  `Invalid rendering mode: STATIC (valid: HTML, JAVASCRIPT)`, plus `enumOptions` in
+  error details.
+
 ## [0.1.6] - 2026-02-21
 
 ### Added
