@@ -228,6 +228,41 @@ class SFConfig:
         self.set("mCrawlConfig.mStoreJavaScript", bool(value))
 
     @property
+    def crawl_images(self) -> bool:
+        """Get whether image assets are crawled."""
+        return bool(self.get("mCrawlConfig.mCrawlImages", False))
+
+    @crawl_images.setter
+    def crawl_images(self, value: bool):
+        """Set whether image assets are crawled (off = images stop eating
+        the URL budget on rendered crawls)."""
+        self.set("mCrawlConfig.mCrawlImages", bool(value))
+
+    @property
+    def store_images(self) -> bool:
+        """Get whether image assets are stored."""
+        return bool(self.get("mCrawlConfig.mStoreImages", False))
+
+    @store_images.setter
+    def store_images(self, value: bool):
+        """Set whether image assets are stored."""
+        self.set("mCrawlConfig.mStoreImages", bool(value))
+
+    @property
+    def crawl_all_subdomains(self) -> bool:
+        """Get whether subdomains are treated as internal ("Crawl All
+        Subdomains"). Note the SF-side typo in the underlying group name:
+        mInteralURLConfig (sic)."""
+        return bool(self.get("mInteralURLConfig.mSearchAllSubdomains", False))
+
+    @crawl_all_subdomains.setter
+    def crawl_all_subdomains(self, value: bool):
+        """Set whether subdomains are treated as internal. Include patterns
+        cannot do this — they filter within scope, they never reclassify
+        internal/external."""
+        self.set("mInteralURLConfig.mSearchAllSubdomains", bool(value))
+
+    @property
     def robots_mode(self) -> str:
         """Get the robots.txt handling mode (RESPECT or IGNORE)."""
         return self.get("mCrawlConfig.mRobotsTxtMode", "RESPECT")

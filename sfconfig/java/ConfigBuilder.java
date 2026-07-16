@@ -86,6 +86,11 @@ public class ConfigBuilder {
             "mCrawlConfig.mInspectAccessibility",
             "mCrawlConfig.mAjaxTimeoutMillis",
             "mCrawlConfig.mCrawlHreflang",
+            "mCrawlConfig.mCrawlImages",
+            "mCrawlConfig.mStoreImages",
+            // NB: "mInteral" (sic) is Screaming Frog's own typo — do not "fix" it
+            "mInteralURLConfig.mSearchAllSubdomains",
+            "mInteralURLConfig.mCrawlOutsideStartFolder",
             // mIsSeoSpider must be settable to false or SF restores the default
             // UA on config deserialization and a custom mUserAgent never persists
             "mUserAgentConfig.mUserAgent",

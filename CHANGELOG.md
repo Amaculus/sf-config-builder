@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `mRobotsUserAgent` are now on the allowlist and the helper sets all three.
 - Allowlisted `mCrawlConfig.mAjaxTimeoutMillis` (JS render wait) and
   `mCrawlConfig.mCrawlHreflang` — both exist in SF 22.2 and round-trip correctly.
+- Allowlisted `mInteralURLConfig.mSearchAllSubdomains` ("Crawl All Subdomains";
+  the group name carries SF's own typo — "mInteral" — and must stay that way) and
+  `mInteralURLConfig.mCrawlOutsideStartFolder`, with a `crawl_all_subdomains`
+  property. Include patterns cannot substitute: they filter within scope but never
+  reclassify internal/external, so subdomains stayed uncrawlable.
+- Allowlisted `mCrawlConfig.mCrawlImages` / `mStoreImages` with `crawl_images` /
+  `store_images` properties — same treatment CSS/JS already had. On rendered
+  crawls, images/fonts consume URL budget as crawled URLs (measured: 1 real HTML
+  page out of 25 URLs before, 23/25 after disabling assets).
 
 ### Fixed
 - Removed `mUserAgentConfig.mPreset` from the allowlist — the field does not exist in
