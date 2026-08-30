@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Link-following fields are now editable: `mCrawlConfig.mCrawlInternalLinks`,
+  `mCrawlConfig.mCrawlExternalLinks` and `mCrawlConfig.mAutoDiscoverSitemaps`.
+  These are what keep a `--crawl-list` run on its list. Without them a list crawl
+  follows every link it finds: measured on a 12-URL list against a live site, 40
+  pages were crawled, 28 of them not on the list.
+
+### Documentation
+- `setMaxDepth` and `setMaxUrls` now document that **a value of 0 means NO
+  LIMIT**, not a limit of zero. The enable flag is derived from `value != 0`, so
+  passing 0 disables the limit and leaves `mLimitSearchDepth` / `mLimitSearchTotal`
+  false. This is intentional, and it was easy to read a returned `mMaxDepth=0` as
+  a depth limit of zero that had been applied.
+
 ## [0.1.7] - 2026-07-15
 
 ### Added

@@ -406,3 +406,30 @@ class TestSFConfigRepr:
         config = SFConfig({"fields": []})
 
         assert "unsaved" in str(config)
+
+
+class TestLinkFollowingFields:
+    """The three fields that keep a --crawl-list run on its list.
+
+    Without them a list crawl follows every link it finds. Measured on a
+    12-URL list against a live site: 40 pages crawled, 28 of them not on the
+    list. A crawl-depth limit is not a substitute, because Screaming Frog
+    treats an image as a depth-1 resource: depth 0 holds the list and captures
+    no images at all, depth 1 captures the images and admits the linked pages.
+    """
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "mCrawlConfig.mCrawlInternalLinks",
+            "mCrawlConfig.mCrawlExternalLinks",
+            "mCrawlConfig.mAutoDiscoverSitemaps",
+        ],
+    )
+    def test_field_is_settable(self, field):
+        """set() should record a patch rather than rejecting the field."""
+        config = SFConfig({"fields": []})
+        config.set(field, False)
+
+        assert config._patches[field] is False
+
