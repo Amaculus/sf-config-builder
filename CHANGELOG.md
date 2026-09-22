@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Custom JavaScript rules work on Screaming Frog 24.3 again. The script-type
+  enum was looked up by one build's obfuscated class name
+  (`seo.spider.config.custom.javascript.id142006137`); SF 24.3 calls it
+  `seo.spider.config.custom.javascript.id`, so `Class.forName` threw and every
+  rule failed with "Invalid custom JavaScript type: EXTRACTION", whichever type
+  was asked for. The enum now comes from `CustomJavaScriptInfo`'s `mType`
+  field, whose name does not change between builds; the old class name remains
+  as a fallback. Verified against SF 24.3.0 on macOS ARM64: the same
+  `add_custom_javascript(...)` fails with 0.1.7's jar and writes the rule with
+  this one.
+
 ## [0.1.7] - 2026-07-15
 
 ### Added

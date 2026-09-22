@@ -1,6 +1,8 @@
 """Tests for SFConfig class."""
 
 import json
+from pathlib import Path
+
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -406,3 +408,33 @@ class TestSFConfigRepr:
         config = SFConfig({"fields": []})
 
         assert "unsaved" in str(config)
+
+
+class TestCustomJavaScriptTypeLookup:
+    """The script-type enum is resolved from a field, not by a class name.
+
+    Screaming Frog's obfuscator renames that enum between builds: the name this
+    file used, `seo.spider.config.custom.javascript.id142006137`, is
+    `seo.spider.config.custom.javascript.id` in SF 24.3 (values ACTION and
+    EXTRACTION). `Class.forName` then threw, and every custom JavaScript rule
+    failed with "Invalid custom JavaScript type: EXTRACTION", whichever type was
+    asked for. Field names are stable, so the enum comes from
+    CustomJavaScriptInfo's `mType` field.
+    """
+
+    def _source(self):
+        java = Path(__file__).resolve().parents[1] / "sfconfig" / "java" / "ConfigBuilder.java"
+        return java.read_text(encoding="utf-8")
+
+    def test_the_enum_is_resolved_from_the_info_field(self):
+        """Both call sites go through the helper that reads the field."""
+        source = self._source()
+
+        assert 'getDeclaredField("mType").getType()' in source
+        assert source.count("customJavaScriptTypeClass()") == 3  # helper + 2 call sites
+
+    def test_the_generated_name_survives_only_as_a_fallback(self):
+        """One mention left: the fallback for a build without that field."""
+        source = self._source()
+
+        assert source.count("javascript.id142006137") == 1
