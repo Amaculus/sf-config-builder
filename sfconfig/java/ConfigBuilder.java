@@ -81,6 +81,11 @@ public class ConfigBuilder {
             "mCrawlConfig.mStoreJavaScript",
             "mCrawlConfig.mStoreOriginalHtml",
             "mCrawlConfig.mStoreRenderedHtml",
+            // The Chrome console log per URL (JavaScript errors and warnings),
+            // the only place Screaming Frog reports a page's JS errors. Same
+            // object as mStoreRenderedHtml and mStoreJavaScript, which are here
+            // already; rendering mode JAVASCRIPT is what fills it.
+            "mCrawlConfig.mStoreChromeConsoleLog",
             "mCrawlConfig.mExtractHttpHeader",
             "mCrawlConfig.mExtractCookies",
             "mCrawlConfig.mInspectAccessibility",

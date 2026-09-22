@@ -410,6 +410,29 @@ class TestSFConfigRepr:
         assert "unsaved" in str(config)
 
 
+class TestStoreChromeConsoleLog:
+    """The Chrome console log is where Screaming Frog reports JavaScript errors.
+
+    It sits on the same object as mStoreRenderedHtml and mStoreJavaScript, both
+    already allowlisted, and is filled when the rendering mode is JAVASCRIPT.
+    Without it a crawl cannot answer "which pages log a JavaScript error", and
+    no custom JavaScript rule can: those run after the page has loaded.
+    """
+
+    def test_the_field_is_allowlisted(self):
+        """The Java allowlist carries the field, so a write is not refused."""
+        java = Path(__file__).resolve().parents[1] / "sfconfig" / "java" / "ConfigBuilder.java"
+
+        assert '"mCrawlConfig.mStoreChromeConsoleLog"' in java.read_text(encoding="utf-8")
+
+    def test_the_property_reads_and_writes_it(self):
+        config = SFConfig({"fields": []})
+
+        assert config.store_chrome_console_log is False
+        config.store_chrome_console_log = True
+        assert config._patches["mCrawlConfig.mStoreChromeConsoleLog"] is True
+
+
 class TestCustomJavaScriptTypeLookup:
     """The script-type enum is resolved from a field, not by a class name.
 

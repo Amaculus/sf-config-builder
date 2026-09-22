@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Allowlisted `mCrawlConfig.mStoreChromeConsoleLog`, with a
+  `store_chrome_console_log` property. It is where Screaming Frog records a
+  page's JavaScript errors and warnings, and it sits on the same object as
+  `mStoreRenderedHtml` and `mStoreJavaScript`, which were allowlisted already.
+  Custom JavaScript cannot substitute: those rules run after the page has
+  loaded, so the errors have already happened. Verified against SF 24.3.0 on
+  macOS ARM64: the field is refused by 0.1.7 ("Field not allowed") and, with
+  this change, writes and reloads as `True`.
+
 ### Fixed
 - Custom JavaScript rules work on Screaming Frog 24.3 again. The script-type
   enum was looked up by one build's obfuscated class name

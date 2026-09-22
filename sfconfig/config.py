@@ -228,6 +228,16 @@ class SFConfig:
         self.set("mCrawlConfig.mStoreJavaScript", bool(value))
 
     @property
+    def store_chrome_console_log(self) -> bool:
+        """Get whether the Chrome console log (JavaScript errors) is stored."""
+        return bool(self.get("mCrawlConfig.mStoreChromeConsoleLog", False))
+
+    @store_chrome_console_log.setter
+    def store_chrome_console_log(self, value: bool):
+        """Set whether the Chrome console log (JavaScript errors) is stored."""
+        self.set("mCrawlConfig.mStoreChromeConsoleLog", bool(value))
+
+    @property
     def crawl_images(self) -> bool:
         """Get whether image assets are crawled."""
         return bool(self.get("mCrawlConfig.mCrawlImages", False))
