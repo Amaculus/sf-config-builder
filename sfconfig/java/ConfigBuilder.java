@@ -1123,6 +1123,26 @@ public class ConfigBuilder {
         return false;
     }
 
+    /**
+     * The enum class of a custom JavaScript rule's type.
+     *
+     * Resolved from CustomJavaScriptInfo's mType field, not by class name:
+     * Screaming Frog's obfuscator renames that enum between builds (it is
+     * seo.spider.config.custom.javascript.id in SF 24.3), so a hard-coded name
+     * makes every custom JavaScript rule fail with "Invalid custom JavaScript
+     * type". Field names are stable, and newCustomJavaScriptInfo's own
+     * fallback already relies on them. The old name stays as a fallback for a
+     * build whose field is named otherwise.
+     */
+    private static Class<?> customJavaScriptTypeClass() throws Exception {
+        Class<?> infoClass = Class.forName("seo.spider.config.custom.javascript.CustomJavaScriptInfo");
+        try {
+            return infoClass.getDeclaredField("mType").getType();
+        } catch (NoSuchFieldException ex) {
+            return Class.forName("seo.spider.config.custom.javascript.id142006137");
+        }
+    }
+
     private static Object newCustomJavaScriptInfo(
             String name,
             Object type,
@@ -1132,7 +1152,7 @@ public class ConfigBuilder {
     ) throws CliException {
         try {
             Class<?> infoClass = Class.forName("seo.spider.config.custom.javascript.CustomJavaScriptInfo");
-            Class<?> typeClass = Class.forName("seo.spider.config.custom.javascript.id142006137");
+            Class<?> typeClass = customJavaScriptTypeClass();
             try {
                 Constructor<?> ctor = infoClass.getDeclaredConstructor(
                         String.class, typeClass, String.class, int.class, String.class);
@@ -1157,7 +1177,7 @@ public class ConfigBuilder {
     private static Object parseCustomJavaScriptType(String type) throws CliException {
         String normalized = type.toUpperCase(Locale.ROOT);
         try {
-            Class<?> enumClass = Class.forName("seo.spider.config.custom.javascript.id142006137");
+            Class<?> enumClass = customJavaScriptTypeClass();
             return Enum.valueOf((Class<Enum>) enumClass, normalized);
         } catch (Exception ex) {
             throw new CliException(ERROR_VALIDATION, 1, "Invalid custom JavaScript type: " + type, null);
