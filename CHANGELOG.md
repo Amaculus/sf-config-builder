@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   These are what keep a `--crawl-list` run on its list. Without them a list crawl
   follows every link it finds: measured on a 12-URL list against a live site, 40
   pages were crawled, 28 of them not on the list.
+- Allowlisted `mCrawlConfig.mStoreChromeConsoleLog`, with a
+  `store_chrome_console_log` property. It is where Screaming Frog records a
+  page's JavaScript errors and warnings, and it sits on the same object as
+  `mStoreRenderedHtml` and `mStoreJavaScript`, which were allowlisted already.
+  Custom JavaScript cannot substitute: those rules run after the page has
+  loaded, so the errors have already happened. Verified against SF 24.3.0 on
+  macOS ARM64: the field is refused by 0.1.7 ("Field not allowed") and, with
+  this change, writes and reloads as `True`.
 
 ### Fixed
 - macOS jar detection now probes `Contents/Java` as well as the legacy
@@ -115,5 +123,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extraction testing against live URLs
 - Cross-platform support (Windows, macOS, Linux)
 - Comprehensive exception hierarchy
+
 
 
