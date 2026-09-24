@@ -88,6 +88,9 @@ public class ConfigBuilder {
             "mCrawlConfig.mCrawlHreflang",
             "mCrawlConfig.mCrawlImages",
             "mCrawlConfig.mStoreImages",
+            "mCrawlConfig.mCrawlInternalLinks",
+            "mCrawlConfig.mCrawlExternalLinks",
+            "mCrawlConfig.mAutoDiscoverSitemaps",
             // NB: "mInteral" (sic) is Screaming Frog's own typo — do not "fix" it
             "mInteralURLConfig.mSearchAllSubdomains",
             "mInteralURLConfig.mCrawlOutsideStartFolder",
@@ -1363,6 +1366,12 @@ public class ConfigBuilder {
         return ((Number) limitValue).intValue();
     }
 
+    /**
+     * Sets the total URL limit.
+     *
+     * <p><strong>A value of 0 means NO LIMIT, not a limit of zero.</strong> The
+     * enable flag is set from {@code value != 0}, matching {@link #setMaxDepth}.
+     */
     private static void setMaxUrls(Object root, int value) throws CliException {
         Object crawlConfig = getNestedField(root, "mCrawlConfig");
         if (crawlConfig == null) {
@@ -1393,6 +1402,17 @@ public class ConfigBuilder {
         return ((Number) limitValue).intValue();
     }
 
+    /**
+     * Sets the crawl depth limit.
+     *
+     * <p><strong>A value of 0 means NO LIMIT, not a depth of zero.</strong> The
+     * enable flag is set from {@code value != 0}, so passing 0 disables the
+     * limit entirely and leaves {@code mLimitSearchDepth} false. Screaming
+     * Frog's own depth-0 setting (crawl only the supplied URLs, used by list
+     * mode) is therefore not reachable through this method; use
+     * {@code mCrawlConfig.mCrawlInternalLinks=false} to keep a crawl on its
+     * list instead.
+     */
     private static void setMaxDepth(Object root, int value) throws CliException {
         Object crawlConfig = getNestedField(root, "mCrawlConfig");
         if (crawlConfig == null) {

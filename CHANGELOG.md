@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -7,12 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Link-following fields are now editable: `mCrawlConfig.mCrawlInternalLinks`,
+  `mCrawlConfig.mCrawlExternalLinks` and `mCrawlConfig.mAutoDiscoverSitemaps`.
+  These are what keep a `--crawl-list` run on its list. Without them a list crawl
+  follows every link it finds: measured on a 12-URL list against a live site, 40
+  pages were crawled, 28 of them not on the list.
+
 ### Fixed
 - macOS jar detection now probes `Contents/Java` as well as the legacy
   `Contents/Resources/Java`. Current Screaming Frog bundles ship the jars in
   `Contents/Java`, so `get_sf_jar_path()` raised `SFNotFoundError` on a default
   macOS install and every call needed an explicit `SF_PATH` / `sf_path=`.
   The current layout is probed first; older bundles still resolve.
+
+### Documentation
+- `setMaxDepth` and `setMaxUrls` now document that **a value of 0 means NO
+  LIMIT**, not a limit of zero. The enable flag is derived from `value != 0`, so
+  passing 0 disables the limit and leaves `mLimitSearchDepth` / `mLimitSearchTotal`
+  false. This is intentional, and it was easy to read a returned `mMaxDepth=0` as
+  a depth limit of zero that had been applied.
 
 ## [0.1.7] - 2026-07-15
 
@@ -27,19 +41,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   config deserialization, so a bare `mUserAgent` write silently reverted. `mIsSeoSpider`
   and `mRobotsUserAgent` are now on the allowlist and the helper sets all three.
 - Allowlisted `mCrawlConfig.mAjaxTimeoutMillis` (JS render wait) and
-  `mCrawlConfig.mCrawlHreflang` — both exist in SF 22.2 and round-trip correctly.
+  `mCrawlConfig.mCrawlHreflang` â€” both exist in SF 22.2 and round-trip correctly.
 - Allowlisted `mInteralURLConfig.mSearchAllSubdomains` ("Crawl All Subdomains";
-  the group name carries SF's own typo — "mInteral" — and must stay that way) and
+  the group name carries SF's own typo â€” "mInteral" â€” and must stay that way) and
   `mInteralURLConfig.mCrawlOutsideStartFolder`, with a `crawl_all_subdomains`
   property. Include patterns cannot substitute: they filter within scope but never
   reclassify internal/external, so subdomains stayed uncrawlable.
 - Allowlisted `mCrawlConfig.mCrawlImages` / `mStoreImages` with `crawl_images` /
-  `store_images` properties — same treatment CSS/JS already had. On rendered
+  `store_images` properties â€” same treatment CSS/JS already had. On rendered
   crawls, images/fonts consume URL budget as crawled URLs (measured: 1 real HTML
   page out of 25 URLs before, 23/25 after disabling assets).
 
 ### Fixed
-- Removed `mUserAgentConfig.mPreset` from the allowlist — the field does not exist in
+- Removed `mUserAgentConfig.mPreset` from the allowlist â€” the field does not exist in
   SF 22.2 (`save()` raised "Field not found" when set).
 - Enum validation errors now include the valid options, e.g.
   `Invalid rendering mode: STATIC (valid: HTML, JAVASCRIPT)`, plus `enumOptions` in
@@ -91,3 +105,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extraction testing against live URLs
 - Cross-platform support (Windows, macOS, Linux)
 - Comprehensive exception hierarchy
+
