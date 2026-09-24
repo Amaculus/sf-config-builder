@@ -95,7 +95,12 @@ public class ConfigBuilder {
             "mCrawlConfig.mStoreImages",
             "mCrawlConfig.mCrawlInternalLinks",
             "mCrawlConfig.mCrawlExternalLinks",
+            "mCrawlConfig.mCrawlCanonicals",
+            "mCrawlConfig.mAlwaysFollowCanonicals",
+            "mCrawlConfig.mAlwaysFollowRedirects",
+            "mCrawlConfig.mCrawlSitemaps",
             "mCrawlConfig.mAutoDiscoverSitemaps",
+            "mCrawlConfig.mCrawlSpecifiedSitemaps",
             // NB: "mInteral" (sic) is Screaming Frog's own typo — do not "fix" it
             "mInteralURLConfig.mSearchAllSubdomains",
             "mInteralURLConfig.mCrawlOutsideStartFolder",
@@ -123,7 +128,8 @@ public class ConfigBuilder {
             "mExcludeManager.mExcludePatterns",
             "mExcludeManager.mExcludeUrls",
             "mCrawlConfig.mIncludePatterns",
-            "mCrawlConfig.mAllowedDomains"
+            "mCrawlConfig.mAllowedDomains",
+            "mCrawlConfig.mSitemapUrls"
     ));
 
     private static final Set<String> SENSITIVE_KEYS = new HashSet<>(Arrays.asList(

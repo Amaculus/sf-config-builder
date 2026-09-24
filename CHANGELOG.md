@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   These are what keep a `--crawl-list` run on its list. Without them a list crawl
   follows every link it finds: measured on a 12-URL list against a live site, 40
   pages were crawled, 28 of them not on the list.
+- Allowlisted specified-sitemap and canonical/redirect crawl controls:
+  `mCrawlConfig.mCrawlSitemaps`, `mCrawlConfig.mCrawlSpecifiedSitemaps`,
+  `mCrawlConfig.mSitemapUrls`, `mCrawlConfig.mCrawlCanonicals`,
+  `mCrawlConfig.mAlwaysFollowCanonicals`, and
+  `mCrawlConfig.mAlwaysFollowRedirects`. This supports reproducible
+  sitemap-assisted and canonical-aware spider crawls without a manual GUI step.
 - Allowlisted `mCrawlConfig.mStoreChromeConsoleLog`, with a
   `store_chrome_console_log` property. It is where Screaming Frog records a
   page's JavaScript errors and warnings, and it sits on the same object as

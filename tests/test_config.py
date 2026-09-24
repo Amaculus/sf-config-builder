@@ -436,6 +436,44 @@ class TestLinkFollowingFields:
         assert config._patches[field] is False
 
 
+class TestAdditionalCrawlControlFields:
+    """Allowlist fields needed for sitemap-assisted and canonical-aware crawls."""
+
+    FIELDS = [
+        "mCrawlConfig.mCrawlCanonicals",
+        "mCrawlConfig.mAlwaysFollowCanonicals",
+        "mCrawlConfig.mAlwaysFollowRedirects",
+        "mCrawlConfig.mCrawlSitemaps",
+        "mCrawlConfig.mCrawlSpecifiedSitemaps",
+    ]
+
+    @pytest.mark.parametrize("field", FIELDS)
+    def test_field_is_settable(self, field):
+        config = SFConfig({"fields": []})
+        config.set(field, True)
+
+        assert config._patches[field] is True
+
+    def test_fields_are_in_java_allowlist(self):
+        java = Path(__file__).resolve().parents[1] / "sfconfig" / "java" / "ConfigBuilder.java"
+        source = java.read_text(encoding="utf-8")
+
+        for field in self.FIELDS:
+            assert f'"{field}"' in source
+
+    def test_sitemap_urls_list_is_settable(self):
+        config = SFConfig({"fields": []})
+        urls = ["https://example.com/sitemap.xml"]
+        config.set("mCrawlConfig.mSitemapUrls", urls)
+
+        assert config._patches["mCrawlConfig.mSitemapUrls"] == urls
+
+    def test_sitemap_urls_is_in_java_list_allowlist(self):
+        java = Path(__file__).resolve().parents[1] / "sfconfig" / "java" / "ConfigBuilder.java"
+
+        assert '"mCrawlConfig.mSitemapUrls"' in java.read_text(encoding="utf-8")
+
+
 class TestStoreChromeConsoleLog:
     """The Chrome console log is where Screaming Frog reports JavaScript errors.
 
