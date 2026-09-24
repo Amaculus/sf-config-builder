@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- macOS jar detection now probes `Contents/Java` as well as the legacy
+  `Contents/Resources/Java`. Current Screaming Frog bundles ship the jars in
+  `Contents/Java`, so `get_sf_jar_path()` raised `SFNotFoundError` on a default
+  macOS install and every call needed an explicit `SF_PATH` / `sf_path=`.
+  The current layout is probed first; older bundles still resolve.
+
 ## [0.1.7] - 2026-07-15
 
 ### Added

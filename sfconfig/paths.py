@@ -11,7 +11,12 @@ from .exceptions import SFNotFoundError
 
 # Default installation paths by platform (list for multiple possible locations)
 SF_PATHS = {
-    "Darwin": ["/Applications/Screaming Frog SEO Spider.app/Contents/Resources/Java"],
+    # Current SF builds ship the jars in Contents/Java; older bundles used
+    # Contents/Resources/Java. Probe the current layout first, then the legacy one.
+    "Darwin": [
+        "/Applications/Screaming Frog SEO Spider.app/Contents/Java",
+        "/Applications/Screaming Frog SEO Spider.app/Contents/Resources/Java",
+    ],
     "Windows": [
         "C:/Program Files/Screaming Frog SEO Spider",
         "C:/Program Files (x86)/Screaming Frog SEO Spider",
